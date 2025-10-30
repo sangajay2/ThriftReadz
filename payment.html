@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Use the Inter font family */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Simple print styling */
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8 sm:p-12">
+    <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="p-8 md:p-12">
+            <!-- Header -->
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Invoice</h1>
+                    <p class="text-gray-500">Invoice #12345</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-gray-600">Issued: <span id="issue-date"></span></p>
+                    <p class="text-gray-600">Due: <span id="due-date"></span></p>
+                </div>
+            </div>
+
+            <!-- Bill To -->
+            <div class="mt-12">
+                <h2 class="text-sm font-semibold text-gray-500 uppercase">Bill To</h2>
+                <p class="text-gray-800 font-medium">Customer Name</p>
+                <p class="text-gray-600">123 Customer Street</p>
+                <p class="text-gray-600">City, State, ZIP</p>
+                <p class="text-gray-600">customer@example.com</p>
+            </div>
+
+            <!-- Invoice Items Table -->
+            <div class="mt-12 flow-root">
+                <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                    <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                        <table class="min-w-full divide-y divide-gray-300">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-3">Description</th>
+                                    <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">Quantity</th>
+                                    <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Price</th>
+                                    <th scope="col" class="py-3.5 pl-3 pr-4 text-right text-sm font-semibold text-gray-900 sm:pr-3">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white" id="invoice-items">
+                                <!-- Items will be injected here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="mt-8 sm:mt-12 ml-auto max-w-xs">
+                <div class="space-y-4">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Subtotal:</span>
+                        <span class="font-medium text-gray-800" id="subtotal"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Tax:</span>
+                        <span class="font-medium text-gray-800" id="tax"></span>
+                    </div>
+                    <div class="flex justify-between border-t border-gray-200 pt-4">
+                        <span class="font-bold text-gray-900 text-lg">Total:</span>
+                        <span class="font-bold text-gray-900 text-lg" id="total"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer / Notes -->
+            <div class="mt-16 border-t pt-8">
+                <h3 class="text-sm font-semibold text-gray-500 uppercase">Notes</h3>
+                <p class="text-gray-600 mt-2">Thank you for your business!</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Print Button -->
+    <div class="text-center mt-8 no-print">
+        <button onclick="window.print()" class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-200">
+            Print Invoice
+        </button>
+    </div>
+
+    <script>
+        // Invoice Data
+        const invoiceData = {
+            items: [
+                {
+                    description: "Book borrowing subscription",
+                    quantity: 1,
+                    price: 199.00
+                },
+                {
+                    description: "Eco-friendly book kits",
+                    quantity: 1,
+                    price: 299.50
+                }
+            ],
+            taxRate: 0.00, // 0% tax
+            currencySymbol: '₹'
+        };
+
+        /**
+         * Formats a number as currency.
+         * @param {number} amount - The amount to format.
+         * @returns {string} The formatted currency string.
+         */
+        function formatCurrency(amount) {
+            return `${invoiceData.currencySymbol}${amount.toFixed(2)}`;
+        }
+
+        window.onload = function() {
+            // Get current date
+            const today = new Date();
+        
+            // Calculate due date (e.g., 14 days from today)
+            const dueDate = new Date();
+            dueDate.setDate(today.getDate() + 14);
+        
+            // Format dates
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const formattedIssuedDate = today.toLocaleDateString('en-US', options);
+            const formattedDueDate = dueDate.toLocaleDateString('en-US', options);
+        
+            // Set dates
+            document.getElementById('issue-date').textContent = formattedIssuedDate;
+            document.getElementById('due-date').textContent = formattedDueDate;
+
+            const itemsTbody = document.getElementById('invoice-items');
+            let subtotal = 0;
+
+            invoiceData.items.forEach(item => {
+                const total = item.quantity * item.price;
+                subtotal += total;
+                const row = `
+                    <tr class="border-b border-gray-200">
+                        <td class="py-4 pl-4 pr-3 text-sm text-gray-800 sm:pl-3">${item.description}</td>
+                        <td class="px-3 py-4 text-center text-sm text-gray-600">${item.quantity}</td>
+                        <td class="px-3 py-4 text-right text-sm text-gray-600">${formatCurrency(item.price)}</td>
+                        <td class="py-4 pl-3 pr-4 text-right text-sm font-medium text-gray-800 sm:pr-3">${formatCurrency(total)}</td>
+                    </tr>
+                `;
+                itemsTbody.innerHTML += row;
+            });
+
+            const tax = subtotal * invoiceData.taxRate;
+            const total = subtotal + tax;
+
+            document.getElementById('subtotal').textContent = formatCurrency(subtotal);
+            document.getElementById('tax').textContent = formatCurrency(tax);
+            document.getElementById('total').textContent = formatCurrency(total);
+        }
+    </script>
